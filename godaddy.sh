@@ -11,7 +11,9 @@
 # - jq - On Debian, apt-get install jq
 #
 # History:
+# [Fork] v1.0 - 20201124 - Feature: Read GoDaddy parameters from a `properties.config` file
 # v1.0 - 20160513 - 1st release.
+#
 #
 # PS: Feel free to distribute but kindly retain the credits (-:
 ###########################################
@@ -19,22 +21,37 @@
 # Begin settings
 # Get the Production API key/secret from https://developer.godaddy.com/keys/.
 # Ensure it's for "Production" as first time it's created for "Test".
-Key=<API production key>
-Secret=<API secret>
 
-# Domain to update.
-Domain=<domain name>
+# Validate that the config file is present
+CONFIG_FILE=~/.godaddy-ddns/properties.config
+if [[ ! -f "${CONFIG_FILE}" ]]; then
+  echo "Config file not found: ${CONFIG_FILE}" && exit 1
+fi
+
+source "${CONFIG_FILE}"
+
+# Validate that the GoDaddy properties are set
+if [[ -z "${GODADDY_API_KEY}" ]]; then
+  echo "GODADDY_API_KEY is not set." && exit 1
+fi
+if [[ -z "${GODADDY_API_SECRET}" ]]; then
+  echo "GODADDY_API_SECRET is not set." && exit 1
+fi
+if [[ -z "${GODADDY_DOMAIN}" ]]; then
+  echo "GODADDY_DOMAIN is not set." && exit 1
+fi
+
+Key="${GODADDY_API_KEY}"
+Secret="${GODADDY_API_SECRET}"
+Domain="${GODADDY_DOMAIN}"
+Type=${GODADDY_RECORD_TYPE:-A}
 
 # Advanced settings - change only if you know what you're doing :-)
-# Record type, as seen in the DNS setup page, default A.
-Type=A
-
-# Record name, as seen in the DNS setup page, default @.
-Name=@
+Name=${GODADDY_RECORD_NAME:-@}
 
 # Time To Live in seconds, minimum default 600 (10mins).
 # If your public IP seldom changes, set it to 3600 (1hr) or more for DNS servers cache performance.
-TTL=600
+TTL=${GODADDY_TTL:-600}
 
 # Writable path to last known Public IP record cached. Best to place in tmpfs.
 CachedIP=/tmp/current_ip
